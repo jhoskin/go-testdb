@@ -7,9 +7,10 @@ import (
 )
 
 type conn struct {
-	queries   map[string]query
-	queryFunc func(query string) (result driver.Rows, err error)
-	execFunc  func(query string, args ...interface{}) (sql.Result, error)
+	queries     map[string]query
+	queryFunc   func(query string) (result driver.Rows, err error)
+	execFunc    func(query string, args ...interface{}) (sql.Result, error)
+	prepareFunc func(query string) (driver.Stmt, error)
 }
 
 func newConn() *conn {
@@ -19,24 +20,28 @@ func newConn() *conn {
 }
 
 func (c *conn) Prepare(query string) (driver.Stmt, error) {
+	if c.prepareFunc != nil {
+		return c.prepareFunc(query)
+	}
+
 	if c.queryFunc != nil {
 		rows, err := c.queryFunc(query)
 
-		return &stmt{
+		return &Stmt{
 			rows: rows,
 			err:  err,
 		}, nil
 	}
 
 	if q, ok := d.conn.queries[getQueryHash(query)]; ok {
-		return &stmt{
+		return &Stmt{
 			rows:   q.rows,
 			err:    q.err,
 			result: q.result,
 		}, nil
 	}
 
-	return new(stmt), errors.New("Query not stubbed: " + query)
+	return new(Stmt), errors.New("Query not stubbed: " + query)
 }
 
 func (*conn) Close() error {

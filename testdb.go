@@ -64,6 +64,11 @@ func SetQueryFunc(f func(query string) (result driver.Rows, err error)) {
 	d.conn.queryFunc = f
 }
 
+// Set your own function to be executed when db.Prepare() is called.
+func SetPrepareFunc(f func(query string) (result driver.Stmt, err error)) {
+	d.conn.prepareFunc = f
+}
+
 // Stubs the global driver.Conn to return the supplied driver.Rows when db.Query() is called, query stubbing is case insensitive, and whitespace is also ignored.
 func StubQuery(q string, rows driver.Rows) {
 	d.conn.queries[getQueryHash(q)] = query{
